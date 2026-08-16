@@ -29,16 +29,18 @@ class PIRSensorUsermod : public Usermod {
     int8_t pin = -1;                // PIR output pin, unset by default
     uint16_t checkIntervalMs = 100; // how often the pin is polled
     String namePrefix = "pir";      // sensor name becomes "<prefix>_motion"
+    uint8_t priority = 100;         // getValueBinary() selection priority - lower wins among sensors of the same SensorType (see sensor_bus.h)
 
     static const char _name[];
     static const char _enabled[];
     static const char _pin[];
     static const char _checkInterval[];
     static const char _namePrefix[];
+    static const char _priority[];
 
     void registerSensors() {
       if (!hub || motionHandle != SENSOR_HANDLE_INVALID) return; // already registered
-      motionHandle = hub->registerSensor((namePrefix + "_motion").c_str(), SensorType::Motion);
+      motionHandle = hub->registerSensor((namePrefix + "_motion").c_str(), SensorType::Motion, nullptr, nullptr, 1, priority);
     }
 
   public:
@@ -80,6 +82,7 @@ class PIRSensorUsermod : public Usermod {
       top[FPSTR(_pin)] = pin;
       top[FPSTR(_checkInterval)] = checkIntervalMs;
       top[FPSTR(_namePrefix)] = namePrefix;
+      top[FPSTR(_priority)] = priority;
     }
 
     bool readFromConfig(JsonObject& root) override {
@@ -91,6 +94,7 @@ class PIRSensorUsermod : public Usermod {
       configComplete &= getJsonValue(top[FPSTR(_pin)], pin);
       configComplete &= getJsonValue(top[FPSTR(_checkInterval)], checkIntervalMs);
       configComplete &= getJsonValue(top[FPSTR(_namePrefix)], namePrefix);
+      configComplete &= getJsonValue(top[FPSTR(_priority)], priority);
 
       if (initDone && pin != oldPin) {
         // pin changed at runtime via the Settings UI - release the old one and re-init on the new one
@@ -105,6 +109,7 @@ class PIRSensorUsermod : public Usermod {
       settingsScript.print(F("addInfo('PIRSensor:pin',1,'PIR output pin (active HIGH)');"));
       settingsScript.print(F("addInfo('PIRSensor:checkInterval',1,'milliseconds between pin reads');"));
       settingsScript.print(F("addInfo('PIRSensor:namePrefix',1,'sensor name becomes &lt;prefix&gt;_motion - must be unique across all sensor providers');"));
+      settingsScript.print(F("addInfo('PIRSensor:priority',1,'getValueBinary() selection priority - lower wins if another provider also registers a Motion sensor');"));
     }
 };
 
@@ -113,6 +118,7 @@ const char PIRSensorUsermod::_enabled[]       PROGMEM = "enabled";
 const char PIRSensorUsermod::_pin[]           PROGMEM = "pin";
 const char PIRSensorUsermod::_checkInterval[] PROGMEM = "checkInterval";
 const char PIRSensorUsermod::_namePrefix[]    PROGMEM = "namePrefix";
+const char PIRSensorUsermod::_priority[]      PROGMEM = "priority";
 
 static PIRSensorUsermod pir_sensor;
 REGISTER_USERMOD(pir_sensor);
