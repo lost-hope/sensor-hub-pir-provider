@@ -15,6 +15,9 @@
  * WLED's PinManager, to avoid clashing with LEDs/relays/other usermods)
  * right here in this usermod's own settings.
  */
+
+REGISTER_SENSOR_SLOT(_slotMotion, "_motion", SensorTypes::Motion, 1, 100);
+
 class PIRSensorUsermod : public Usermod {
   private:
     SensorHub* hub = nullptr;
@@ -40,7 +43,7 @@ class PIRSensorUsermod : public Usermod {
 
     void registerSensors() {
       if (!hub || motionHandle != SENSOR_HANDLE_INVALID) return; // already registered
-      motionHandle = hub->registerSensor((namePrefix + "_motion").c_str(), SensorType::Motion, nullptr, nullptr, 1, priority);
+      motionHandle = hub->attachSensor(&_slotMotion, namePrefix.c_str(), 1, priority);
     }
 
   public:
